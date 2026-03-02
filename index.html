@@ -1,0 +1,1727 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="STELLAR — 宇宙船コックピット型ミッション管理システム">
+  <meta name="theme-color" content="#020614">
+  <title>STELLAR — MISSION CONTROL</title>
+
+  <!-- Orbitron: SF的幾何学フォント / Exo 2: 読みやすい近未来フォント -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Exo+2:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    /* ============================================================
+       CSS変数 — カラーシステム
+    ============================================================ */
+    :root {
+      --void:        #020614;
+      --deep:        #050d24;
+      --panel:       #080f2a;
+      --glass:       rgba(8, 20, 60, 0.5);
+      --glass-light: rgba(0, 245, 255, 0.05);
+      --border:      rgba(0, 245, 255, 0.15);
+      --border-hot:  rgba(0, 245, 255, 0.5);
+
+      --cyan:        #00f5ff;
+      --cyan-dim:    rgba(0, 245, 255, 0.6);
+      --cyan-glow:   rgba(0, 245, 255, 0.15);
+      --blue:        #0055ff;
+      --violet:      #8000ff;
+      --emerald:     #00ff88;
+      --emerald-dim: rgba(0, 255, 136, 0.6);
+      --orange:      #ff8c00;
+      --red:         #ff2244;
+
+      --text-primary:   #e8f4ff;
+      --text-secondary: rgba(180, 210, 255, 0.7);
+      --text-muted:     rgba(120, 160, 220, 0.4);
+
+      --font-display: 'Orbitron', monospace;
+      --font-body:    'Exo 2', sans-serif;
+
+      --glow-cyan:    0 0 8px rgba(0, 245, 255, 0.8), 0 0 20px rgba(0, 245, 255, 0.3);
+      --glow-emerald: 0 0 8px rgba(0, 255, 136, 0.8), 0 0 20px rgba(0, 255, 136, 0.3);
+      --glow-violet:  0 0 8px rgba(128, 0, 255, 0.8), 0 0 20px rgba(128, 0, 255, 0.3);
+    }
+
+    /* ============================================================
+       リセット & ベース
+    ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-body);
+      font-size: 16px;
+      color: var(--text-primary);
+      background-color: var(--void);
+      min-height: 100vh;
+      overflow-x: hidden;
+      cursor: default;
+    }
+
+    button { cursor: pointer; border: none; background: none; font-family: inherit; }
+    ul, ol { list-style: none; }
+
+    :focus-visible {
+      outline: 1px solid var(--cyan);
+      outline-offset: 3px;
+      border-radius: 4px;
+    }
+
+    /* ============================================================
+       宇宙背景レイヤー
+    ============================================================ */
+
+    /* Layer 1: 星フィールド（CSS pure） */
+    .star-field {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* 多数の星をbox-shadowで一気に生成 */
+    .stars-sm::before,
+    .stars-md::before,
+    .stars-lg::before {
+      content: '';
+      position: absolute;
+      border-radius: 50%;
+      background: transparent;
+      animation: twinkle linear infinite;
+    }
+
+    .stars-sm::before {
+      width: 1px; height: 1px;
+      box-shadow:
+        45px 120px #fff, 190px 340px #fff, 320px 80px #fff,
+        500px 200px #fff, 670px 420px #fff, 820px 150px #fff,
+        100px 600px rgba(255,255,255,.6), 280px 510px rgba(255,255,255,.5),
+        450px 680px #fff, 610px 320px rgba(255,255,255,.7),
+        750px 540px #fff, 900px 380px rgba(255,255,255,.5),
+        130px 750px #fff, 350px 850px rgba(255,255,255,.8),
+        580px 780px #fff, 800px 720px rgba(255,255,255,.6),
+        200px 920px rgba(255,255,255,.4), 420px 960px #fff,
+        690px 880px rgba(255,255,255,.7), 940px 830px rgba(255,255,255,.5),
+        60px 450px rgba(255,255,255,.3), 240px 230px rgba(255,255,255,.6),
+        720px 60px rgba(255,255,255,.8), 860px 490px rgba(255,255,255,.4),
+        1050px 120px #fff, 1200px 380px rgba(255,255,255,.6),
+        1100px 650px rgba(255,255,255,.5), 980px 200px #fff,
+        1300px 500px rgba(255,255,255,.7), 1400px 800px rgba(255,255,255,.4);
+      animation-duration: 80s;
+    }
+
+    .stars-md::before {
+      width: 1.5px; height: 1.5px;
+      box-shadow:
+        80px 180px rgba(180,220,255,.9), 260px 70px rgba(180,220,255,.7),
+        440px 300px rgba(0,245,255,.8), 600px 560px rgba(180,220,255,.6),
+        780px 240px rgba(0,245,255,.9), 920px 460px rgba(180,220,255,.7),
+        150px 680px rgba(0,245,255,.6), 380px 790px rgba(180,220,255,.8),
+        540px 130px rgba(0,245,255,.7), 720px 870px rgba(180,220,255,.5),
+        1000px 300px rgba(0,245,255,.8), 1150px 580px rgba(180,220,255,.6),
+        1280px 150px rgba(0,245,255,.7), 1350px 700px rgba(180,220,255,.9);
+      animation-duration: 50s;
+    }
+
+    .stars-lg::before {
+      width: 2.5px; height: 2.5px;
+      box-shadow:
+        110px 250px rgba(0,245,255,.9), 390px 480px rgba(128,0,255,.8),
+        620px 150px rgba(0,245,255,1), 870px 620px rgba(0,255,136,.7),
+        1050px 420px rgba(0,245,255,.9), 1250px 280px rgba(128,0,255,.8),
+        230px 820px rgba(0,255,136,.6), 760px 380px rgba(0,245,255,.8);
+      animation-duration: 30s;
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.3; transform: scale(0.8); }
+    }
+
+    /* Layer 2: 宇宙雲（nebula）グラデーション */
+    .nebula {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 70% 50% at 15% 20%, rgba(128,0,255,.08) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 60% at 85% 70%, rgba(0,85,255,.10) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 30% at 50% 90%, rgba(0,245,255,.06) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 40% at 80% 10%, rgba(0,255,136,.04) 0%, transparent 50%);
+      animation: nebulaDrift 25s ease-in-out infinite alternate;
+    }
+
+    @keyframes nebulaDrift {
+      0%   { opacity: 0.6; transform: scale(1) rotate(0deg); }
+      100% { opacity: 1;   transform: scale(1.05) rotate(1deg); }
+    }
+
+    /* Layer 3: スキャンライン（CRTっぽいSF感） */
+    .scanlines {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.03) 2px,
+        rgba(0, 0, 0, 0.03) 4px
+      );
+    }
+
+    /* ============================================================
+       グリッドオーバーレイ（宇宙船HUD感）
+    ============================================================ */
+    .hud-grid {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(0,245,255,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,245,255,.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+      mask-image: radial-gradient(ellipse at center, rgba(0,0,0,0.4) 0%, transparent 70%);
+    }
+
+    /* ============================================================
+       アプリレイアウト
+    ============================================================ */
+    .app-wrapper {
+      position: relative;
+      z-index: 10;
+      min-height: 100vh;
+    }
+
+    /* ============================================================
+       ヘッダー — HUDスタイル
+    ============================================================ */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid var(--border);
+      background: rgba(2, 6, 20, 0.85);
+      backdrop-filter: blur(20px) saturate(180%);
+    }
+
+    .header-inner {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 0.9rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    /* ロゴ */
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .logo-emblem {
+      width: 36px;
+      height: 36px;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    /* CSSのみで描くロゴマーク */
+    .logo-emblem::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 2px solid var(--cyan);
+      box-shadow: var(--glow-cyan), inset 0 0 10px rgba(0,245,255,.15);
+      animation: logoSpin 12s linear infinite;
+    }
+
+    .logo-emblem::after {
+      content: '';
+      position: absolute;
+      inset: 6px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,245,255,.3) 0%, transparent 70%);
+      border: 1px solid rgba(0,245,255,.4);
+      animation: logoPulse 2s ease-in-out infinite;
+    }
+
+    .logo-star {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      animation: logoSpin 12s linear infinite reverse;
+    }
+
+    @keyframes logoSpin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    @keyframes logoPulse {
+      0%, 100% { opacity: 0.5; transform: scale(0.9); }
+      50%       { opacity: 1;   transform: scale(1.1); }
+    }
+
+    .logo-texts {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .logo-name {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-weight: 900;
+      letter-spacing: 0.2em;
+      background: linear-gradient(90deg, var(--cyan), var(--violet), var(--cyan));
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: shimmer 4s linear infinite;
+    }
+
+    .logo-sub {
+      font-family: var(--font-display);
+      font-size: 0.5rem;
+      letter-spacing: 0.3em;
+      color: var(--text-muted);
+    }
+
+    @keyframes shimmer {
+      to { background-position: 200% center; }
+    }
+
+    /* ヘッダー右側：日付 + ステータス */
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .sys-status {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-family: var(--font-display);
+      font-size: 0.55rem;
+      letter-spacing: 0.12em;
+      color: var(--emerald-dim);
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--emerald);
+      box-shadow: var(--glow-emerald);
+      animation: blink 1.5s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+
+    .stardate {
+      font-family: var(--font-display);
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      color: var(--text-secondary);
+      text-align: right;
+    }
+
+    .stardate-label {
+      display: block;
+      font-size: 0.45rem;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+
+    /* ============================================================
+       メインコンテンツ
+    ============================================================ */
+    .main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 1.5rem 1.5rem 5rem;
+    }
+
+    /* ============================================================
+       ミッションブリーフィングバー（入力エリア）
+    ============================================================ */
+    .input-section {
+      margin-bottom: 1.5rem;
+    }
+
+    .input-label-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .input-label-text {
+      font-family: var(--font-display);
+      font-size: 0.55rem;
+      letter-spacing: 0.25em;
+      color: var(--cyan-dim);
+    }
+
+    .input-label-line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, var(--cyan-glow), transparent);
+    }
+
+    .input-frame {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    /* グラスパネルの共通スタイル */
+    .glass-panel {
+      background: var(--glass);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(16px);
+    }
+
+    .input-inner {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: rgba(5, 13, 40, 0.8);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      transition: border-color .2s, box-shadow .2s;
+      overflow: hidden;
+    }
+
+    .input-inner:focus-within {
+      border-color: var(--cyan);
+      box-shadow: 0 0 0 1px rgba(0,245,255,.2), 0 0 20px rgba(0,245,255,.08);
+    }
+
+    .input-prefix {
+      padding: 0 0.75rem;
+      font-family: var(--font-display);
+      font-size: 0.7rem;
+      color: var(--cyan);
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+      border-right: 1px solid var(--border);
+      height: 50px;
+      display: flex;
+      align-items: center;
+    }
+
+    #task-input {
+      flex: 1;
+      height: 50px;
+      padding: 0 1rem;
+      background: transparent;
+      border: none;
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      letter-spacing: 0.03em;
+    }
+
+    #task-input::placeholder {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    #task-input:focus { outline: none; }
+
+    .add-btn {
+      height: 50px;
+      padding: 0 1.25rem;
+      background: linear-gradient(135deg, rgba(0,245,255,.15), rgba(0,85,255,.2));
+      border-left: 1px solid var(--border);
+      font-family: var(--font-display);
+      font-size: 0.6rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      color: var(--cyan);
+      transition: background .2s, color .2s, box-shadow .2s;
+      white-space: nowrap;
+    }
+
+    .add-btn:hover {
+      background: linear-gradient(135deg, rgba(0,245,255,.25), rgba(0,85,255,.3));
+      color: #fff;
+      box-shadow: inset 0 0 20px rgba(0,245,255,.1);
+    }
+
+    .add-btn:active { transform: scale(0.97); }
+
+    .input-footer {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 0.35rem;
+      padding: 0 0.5rem;
+      font-family: var(--font-display);
+      font-size: 0.5rem;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+
+    /* ============================================================
+       ミッションステータスパネル（プログレス）
+    ============================================================ */
+    .status-panel {
+      margin-bottom: 1.75rem;
+      padding: 1.25rem 1.5rem;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(0,85,255,.08), rgba(128,0,255,.06));
+      border: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* コーナーの装飾 */
+    .status-panel::before,
+    .status-panel::after {
+      content: '';
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-color: var(--cyan);
+      border-style: solid;
+      opacity: 0.5;
+    }
+
+    .status-panel::before {
+      top: 6px; left: 6px;
+      border-width: 2px 0 0 2px;
+    }
+
+    .status-panel::after {
+      bottom: 6px; right: 6px;
+      border-width: 0 2px 2px 0;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      gap: 1rem;
+    }
+
+    .status-label {
+      font-family: var(--font-display);
+      font-size: 0.55rem;
+      letter-spacing: 0.25em;
+      color: var(--text-muted);
+    }
+
+    .status-value {
+      font-family: var(--font-display);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--cyan);
+      letter-spacing: 0.1em;
+    }
+
+    #progress-label {
+      font-family: var(--font-display);
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      color: var(--text-secondary);
+    }
+
+    /* カスタムプログレスバー（HUDゲージ） */
+    .gauge-track {
+      position: relative;
+      height: 8px;
+      background: rgba(0, 245, 255, 0.06);
+      border-radius: 999px;
+      border: 1px solid rgba(0, 245, 255, 0.1);
+      overflow: hidden;
+    }
+
+    #progress-bar {
+      height: 100%;
+      border-radius: 999px;
+      width: 0%;
+      background: linear-gradient(90deg, var(--blue), var(--cyan), var(--emerald));
+      box-shadow: 0 0 10px rgba(0,245,255,.5);
+      transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+    }
+
+    /* 光るトレイル */
+    #progress-bar::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 20px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.5));
+      border-radius: 999px;
+    }
+
+    /* セグメント区切りライン */
+    .gauge-segments {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      gap: 0;
+      pointer-events: none;
+    }
+
+    .gauge-seg {
+      flex: 1;
+      border-right: 1px solid rgba(0,0,0,.3);
+    }
+
+    .gauge-seg:last-child { border-right: none; }
+
+    /* ミッションカウンター */
+    .mission-counters {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .counter-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.2rem;
+      flex: 1;
+      padding: 0.6rem 0.5rem;
+      border-radius: 6px;
+      background: rgba(0,0,0,.2);
+      border: 1px solid rgba(0,245,255,.08);
+    }
+
+    .counter-num {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .counter-num.active { color: var(--cyan); text-shadow: var(--glow-cyan); }
+    .counter-num.carry  { color: var(--orange); text-shadow: 0 0 8px rgba(255,140,0,.8); }
+    .counter-num.done   { color: var(--emerald); text-shadow: var(--glow-emerald); }
+
+    .counter-label {
+      font-family: var(--font-display);
+      font-size: 0.42rem;
+      letter-spacing: 0.15em;
+      color: var(--text-muted);
+    }
+
+    /* ============================================================
+       セクションヘッダー
+    ============================================================ */
+    .section { margin-bottom: 1.5rem; }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.4rem 0;
+      margin-bottom: 0.75rem;
+    }
+
+    .section-header.clickable {
+      cursor: pointer;
+      border-radius: 4px;
+      padding: 0.4rem 0.5rem;
+      margin-left: -0.5rem;
+      transition: background .18s;
+    }
+
+    .section-header.clickable:hover {
+      background: rgba(0,245,255,.05);
+    }
+
+    .section-line {
+      flex: 1;
+      height: 1px;
+    }
+
+    .section-line-cyan   { background: linear-gradient(90deg, rgba(0,245,255,.3), transparent); }
+    .section-line-orange { background: linear-gradient(90deg, rgba(255,140,0,.3), transparent); }
+    .section-line-green  { background: linear-gradient(90deg, rgba(0,255,136,.3), transparent); }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 0.55rem;
+      font-weight: 600;
+      letter-spacing: 0.25em;
+    }
+
+    .section-title-cyan   { color: var(--cyan); }
+    .section-title-orange { color: var(--orange); }
+    .section-title-green  { color: var(--emerald); }
+
+    .section-badge {
+      font-family: var(--font-display);
+      font-size: 0.5rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 3px;
+      margin-left: auto;
+    }
+
+    .badge-cyan   { background: rgba(0,245,255,.12); color: var(--cyan); border: 1px solid rgba(0,245,255,.2); }
+    .badge-orange { background: rgba(255,140,0,.12);  color: var(--orange); border: 1px solid rgba(255,140,0,.2); }
+    .badge-green  { background: rgba(0,255,136,.12);  color: var(--emerald); border: 1px solid rgba(0,255,136,.2); }
+
+    .toggle-chevron {
+      font-size: 0.5rem;
+      color: var(--text-muted);
+      transition: transform .2s;
+    }
+
+    /* ============================================================
+       タスクリスト
+    ============================================================ */
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .collapsed .task-list { display: none; }
+
+    /* ============================================================
+       タスクカード（ミッションパネル）
+    ============================================================ */
+    .task-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 0.75rem 0.75rem 1rem;
+      min-height: 56px;
+      border-radius: 8px;
+      background: rgba(5, 13, 40, 0.7);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(8px);
+      position: relative;
+      overflow: hidden;
+      transition: border-color .2s, box-shadow .2s, transform .15s;
+      animation: missionSlideIn .25s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    @keyframes missionSlideIn {
+      from { opacity: 0; transform: translateX(-12px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    /* 左側の光るアクセントライン */
+    .task-item::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 10%; bottom: 10%;
+      width: 2px;
+      background: var(--cyan);
+      box-shadow: var(--glow-cyan);
+      border-radius: 999px;
+      opacity: 0.7;
+    }
+
+    .task-item:hover {
+      border-color: rgba(0,245,255,.35);
+      box-shadow: 0 0 20px rgba(0,245,255,.05), inset 0 0 30px rgba(0,245,255,.03);
+      transform: translateX(2px);
+    }
+
+    /* スキャン効果（ホバー時） */
+    .task-item::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%; bottom: 0;
+      width: 40%;
+      background: linear-gradient(90deg, transparent, rgba(0,245,255,.04), transparent);
+      transition: left .5s ease;
+    }
+
+    .task-item:hover::after { left: 120%; }
+
+    /* 持ち越しカード */
+    #carry-list .task-item {
+      border-color: rgba(255,140,0,.2);
+      background: rgba(30, 15, 0, 0.6);
+    }
+
+    #carry-list .task-item::before {
+      background: var(--orange);
+      box-shadow: 0 0 8px rgba(255,140,0,.8);
+    }
+
+    #carry-list .task-item:hover {
+      border-color: rgba(255,140,0,.4);
+      box-shadow: 0 0 20px rgba(255,140,0,.05);
+    }
+
+    /* 完了済みカード */
+    .task-item.task-done {
+      opacity: 0.4;
+      transform: none !important;
+    }
+
+    .task-item.task-done::before {
+      background: var(--emerald);
+      box-shadow: var(--glow-emerald);
+      opacity: 0.4;
+    }
+
+    /* ============================================================
+       チェックボタン
+    ============================================================ */
+    .task-check {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      border: 1.5px solid rgba(0,245,255,.3);
+      background: rgba(0,245,255,.05);
+      color: transparent;
+      transition: border-color .2s, background .2s, box-shadow .2s;
+      position: relative;
+    }
+
+    .task-check:hover {
+      border-color: var(--cyan);
+      background: rgba(0,245,255,.12);
+      box-shadow: var(--glow-cyan);
+    }
+
+    /* 完了状態 */
+    .task-done .task-check {
+      background: linear-gradient(135deg, rgba(0,255,136,.3), rgba(0,245,255,.2));
+      border-color: var(--emerald);
+      color: var(--emerald);
+      box-shadow: var(--glow-emerald);
+    }
+
+    .check-icon {
+      width: 11px; height: 11px;
+      stroke-width: 3;
+    }
+
+    /* ============================================================
+       タスクテキスト
+    ============================================================ */
+    .task-text {
+      flex: 1;
+      font-size: 0.9rem;
+      font-weight: 400;
+      letter-spacing: 0.02em;
+      color: var(--text-primary);
+      line-height: 1.4;
+      word-break: break-word;
+      min-width: 0;
+      cursor: text;
+    }
+
+    .task-done .task-text {
+      text-decoration: line-through;
+      color: var(--text-muted);
+    }
+
+    /* ============================================================
+       持ち越しバッジ
+    ============================================================ */
+    .carry-badge {
+      font-family: var(--font-display);
+      font-size: 0.42rem;
+      letter-spacing: 0.1em;
+      color: var(--orange);
+      border: 1px solid rgba(255,140,0,.3);
+      background: rgba(255,140,0,.08);
+      padding: 2px 6px;
+      border-radius: 3px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* ============================================================
+       削除ボタン
+    ============================================================ */
+    .task-delete {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 4px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+      opacity: 0;
+      transition: opacity .18s, background .18s, color .18s;
+    }
+
+    .task-item:hover .task-delete { opacity: 1; }
+
+    .task-delete:hover {
+      background: rgba(255,34,68,.12);
+      color: var(--red);
+      box-shadow: 0 0 8px rgba(255,34,68,.3);
+    }
+
+    .task-delete svg { width: 13px; height: 13px; }
+
+    /* タッチデバイスでは常に表示 */
+    @media (hover: none) { .task-delete { opacity: 1; } }
+
+    /* ============================================================
+       インライン編集
+    ============================================================ */
+    .task-edit-input {
+      flex: 1;
+      border: none;
+      border-bottom: 1px solid var(--cyan);
+      background: transparent;
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      letter-spacing: 0.02em;
+      color: var(--text-primary);
+      padding: 0;
+      outline: none;
+      box-shadow: 0 2px 0 rgba(0,245,255,.2);
+    }
+
+    /* ============================================================
+       空状態
+    ============================================================ */
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1.5rem;
+    }
+
+    .empty-graphic {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 1.5rem;
+    }
+
+    .empty-orbit {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 1px solid rgba(0,245,255,.2);
+      animation: orbitSpin 8s linear infinite;
+    }
+
+    .empty-orbit::after {
+      content: '';
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      background: var(--cyan);
+      border-radius: 50%;
+      box-shadow: var(--glow-cyan);
+      top: -3px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .empty-orbit:nth-child(2) {
+      inset: 10px;
+      border-color: rgba(128,0,255,.25);
+      animation-duration: 5s;
+      animation-direction: reverse;
+    }
+
+    .empty-orbit:nth-child(2)::after {
+      background: var(--violet);
+      box-shadow: var(--glow-violet);
+    }
+
+    .empty-core {
+      position: absolute;
+      inset: 30px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,245,255,.3), transparent);
+      border: 1px solid rgba(0,245,255,.3);
+      animation: logoPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes orbitSpin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    .empty-title {
+      font-family: var(--font-display);
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+
+    .empty-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+
+    /* ============================================================
+       ミッション完了エフェクト
+    ============================================================ */
+    @keyframes missionComplete {
+      0%   { box-shadow: 0 0 0 0 rgba(0,255,136,.6); }
+      40%  { box-shadow: 0 0 0 12px rgba(0,255,136,0); border-color: var(--emerald); }
+      100% { box-shadow: 0 0 0 0 transparent; }
+    }
+
+    .mission-complete-flash {
+      animation: missionComplete .5s ease-out !important;
+    }
+
+    /* パーティクルエフェクト（JS制御） */
+    .particle {
+      position: fixed;
+      pointer-events: none;
+      border-radius: 50%;
+      z-index: 9999;
+      animation: particleFly .7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes particleFly {
+      0%   { opacity: 1; transform: scale(1) translate(0, 0); }
+      100% { opacity: 0; transform: scale(0) translate(var(--tx), var(--ty)); }
+    }
+
+    /* ============================================================
+       トースト
+    ============================================================ */
+    .toast {
+      position: fixed;
+      bottom: -80px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 0.6rem 1.4rem;
+      border-radius: 999px;
+      font-family: var(--font-display);
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      white-space: nowrap;
+      z-index: 1000;
+      pointer-events: none;
+      transition: bottom .35s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+      background: rgba(5, 13, 40, 0.95);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+      color: var(--cyan);
+      box-shadow: 0 0 20px rgba(0,245,255,.15);
+    }
+
+    .toast.show { bottom: 2rem; }
+
+    .toast-error {
+      color: var(--red);
+      border-color: rgba(255,34,68,.3);
+      box-shadow: 0 0 20px rgba(255,34,68,.15);
+    }
+
+    .toast-success {
+      color: var(--emerald);
+      border-color: rgba(0,255,136,.3);
+      box-shadow: 0 0 20px rgba(0,255,136,.15);
+    }
+
+    /* ============================================================
+       フッター
+    ============================================================ */
+    .footer {
+      text-align: center;
+      padding: 1rem;
+      font-family: var(--font-display);
+      font-size: 0.45rem;
+      letter-spacing: 0.2em;
+      color: var(--text-muted);
+    }
+
+    /* ============================================================
+       スクロールバー
+    ============================================================ */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--void); }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(0,245,255,.15);
+      border-radius: 999px;
+    }
+
+    /* ============================================================
+       スクリーンリーダー専用
+    ============================================================ */
+    .sr-only {
+      position: absolute;
+      width: 1px; height: 1px;
+      padding: 0; margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* ============================================================
+       レスポンシブ
+    ============================================================ */
+    @media (max-width: 640px) {
+      .header-inner { padding: 0.75rem 1rem; }
+      .main { padding: 1.25rem 1rem 4rem; }
+      .logo-name { font-size: 0.9rem; }
+      .sys-status { display: none; }
+      .task-delete { opacity: 1; }
+      .mission-counters { gap: 0.5rem; }
+      .counter-num { font-size: 1.1rem; }
+    }
+
+    @media (max-width: 380px) {
+      .input-prefix { display: none; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ============================================================
+       背景レイヤー群（宇宙空間）
+  ============================================================ -->
+  <div class="star-field" aria-hidden="true">
+    <div class="stars-sm"></div>
+    <div class="stars-md"></div>
+    <div class="stars-lg"></div>
+  </div>
+  <div class="nebula" aria-hidden="true"></div>
+  <div class="hud-grid" aria-hidden="true"></div>
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <!-- ============================================================
+       アプリ本体
+  ============================================================ -->
+  <div class="app-wrapper">
+
+    <!-- ヘッダー -->
+    <header class="header" role="banner">
+      <div class="header-inner">
+        <div class="logo">
+          <div class="logo-emblem" aria-hidden="true">
+            <span class="logo-star">★</span>
+          </div>
+          <div class="logo-texts">
+            <span class="logo-name">STELLAR</span>
+            <span class="logo-sub">MISSION CONTROL v2.0</span>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="sys-status" aria-label="システム稼働中">
+            <div class="status-dot"></div>
+            <span>SYS ONLINE</span>
+          </div>
+          <div class="stardate">
+            <span class="stardate-label">STARDATE</span>
+            <span id="today-date"></span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- メイン -->
+    <main class="main" role="main">
+
+      <!-- ① ミッション追加インターフェース -->
+      <section class="input-section" aria-label="ミッションを追加">
+        <div class="input-label-bar" aria-hidden="true">
+          <span class="input-label-text">NEW MISSION BRIEFING</span>
+          <span class="input-label-line"></span>
+        </div>
+        <div class="input-frame">
+          <div class="input-inner">
+            <span class="input-prefix" aria-hidden="true">CMD&gt;</span>
+            <label for="task-input" class="sr-only">ミッションを入力</label>
+            <input
+              type="text"
+              id="task-input"
+              placeholder="ミッション内容を入力 — Enterで追加"
+              maxlength="100"
+              autocomplete="off"
+              autocorrect="off"
+              spellcheck="false"
+              aria-label="新しいミッションを入力してください"
+            >
+            <button class="add-btn" id="add-btn" aria-label="ミッションを追加">
+              DEPLOY
+            </button>
+          </div>
+        </div>
+        <div class="input-footer" aria-live="polite">
+          <span>ENTER to deploy · DOUBLE-CLICK to edit</span>
+          <span id="char-count"></span>
+        </div>
+      </section>
+
+      <!-- ② ミッションステータスパネル -->
+      <section class="status-panel" aria-label="ミッション進捗">
+        <div class="status-row">
+          <span class="status-label">MISSION PROGRESS</span>
+          <span id="progress-label" class="status-value">AWAITING ORDERS</span>
+        </div>
+        <div
+          class="gauge-track"
+          role="progressbar"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+          aria-label="完了率"
+        >
+          <div id="progress-bar"></div>
+          <div class="gauge-segments" aria-hidden="true">
+            <div class="gauge-seg"></div><div class="gauge-seg"></div>
+            <div class="gauge-seg"></div><div class="gauge-seg"></div>
+            <div class="gauge-seg"></div>
+          </div>
+        </div>
+        <div class="mission-counters">
+          <div class="counter-item">
+            <span class="counter-num active" id="count-active">0</span>
+            <span class="counter-label">ACTIVE</span>
+          </div>
+          <div class="counter-item">
+            <span class="counter-num carry" id="count-carry">0</span>
+            <span class="counter-label">CARRIED</span>
+          </div>
+          <div class="counter-item">
+            <span class="counter-num done" id="count-done">0</span>
+            <span class="counter-label">COMPLETE</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ③ タスクコンテナ（イベント委譲の受け口） -->
+      <div id="task-container">
+
+        <!-- 持ち越しミッション -->
+        <section id="carry-section" style="display:none" aria-label="持ち越しミッション">
+          <div class="section-header">
+            <span class="section-title section-title-orange">⚠ CARRIED OVER</span>
+            <span class="section-line section-line-orange"></span>
+            <span class="section-badge badge-orange" id="carry-count">0</span>
+          </div>
+          <ul class="task-list" id="carry-list" role="list" aria-label="持ち越しミッション一覧"></ul>
+        </section>
+
+        <!-- 今日のミッション -->
+        <section aria-label="今日のミッション">
+          <div class="section-header">
+            <span class="section-title section-title-cyan">◈ ACTIVE MISSIONS</span>
+            <span class="section-line section-line-cyan"></span>
+            <span class="section-badge badge-cyan" id="today-count">0</span>
+          </div>
+          <ul class="task-list" id="today-list" role="list" aria-label="アクティブミッション一覧"></ul>
+        </section>
+
+        <!-- 空状態 -->
+        <div id="empty-state" style="display:none" class="empty-state" role="status">
+          <div class="empty-graphic" aria-hidden="true">
+            <div class="empty-orbit"></div>
+            <div class="empty-orbit"></div>
+            <div class="empty-core"></div>
+          </div>
+          <p class="empty-title">NO ACTIVE MISSIONS</p>
+          <p class="empty-desc">ミッションがありません<br>上の入力欄から最初のミッションを追加してください</p>
+        </div>
+
+        <!-- 完了済みミッション（折りたたみ） -->
+        <section id="done-section" style="display:none" aria-label="完了済みミッション">
+          <div
+            class="section-header clickable"
+            id="done-header"
+            role="button"
+            tabindex="0"
+            aria-expanded="true"
+            aria-controls="done-list"
+          >
+            <span class="section-title section-title-green">✓ MISSION COMPLETE</span>
+            <span class="section-line section-line-green"></span>
+            <span class="section-badge badge-green" id="done-count">0</span>
+            <span class="toggle-chevron" aria-hidden="true">▼</span>
+          </div>
+          <ul class="task-list" id="done-list" role="list" aria-label="完了済みミッション一覧"></ul>
+        </section>
+
+      </div><!-- /#task-container -->
+
+      <footer class="footer" role="contentinfo">
+        <span>STELLAR MISSION CONTROL · DATA STORED LOCALLY · NO TRANSMISSION REQUIRED</span>
+      </footer>
+
+    </main>
+  </div>
+
+  <!-- トースト通知 -->
+  <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+    /* ============================================================
+       STORAGE MODULE — LocalStorageの操作を担当
+    ============================================================ */
+    const Storage = (() => {
+      const KEYS = {
+        TASKS:      'stellar_tasks',
+        LAST_VISIT: 'stellar_last_visit',
+      };
+
+      // タスク一覧を取得（破損時は空配列を返す）
+      const getTasks = () => {
+        try {
+          return JSON.parse(localStorage.getItem(KEYS.TASKS)) || [];
+        } catch { return []; }
+      };
+
+      const saveTasks = (tasks) => {
+        try {
+          localStorage.setItem(KEYS.TASKS, JSON.stringify(tasks));
+        } catch (e) {
+          console.error('Storage error:', e);
+        }
+      };
+
+      const getLastVisit = () => localStorage.getItem(KEYS.LAST_VISIT);
+
+      const updateLastVisit = () => localStorage.setItem(KEYS.LAST_VISIT, getToday());
+
+      // YYYY-MM-DD形式で今日の日付を返す（sv-SEロケールが一番シンプル）
+      const getToday = () => new Date().toLocaleDateString('sv-SE');
+
+      return { getTasks, saveTasks, getLastVisit, updateLastVisit, getToday };
+    })();
+
+    /* ============================================================
+       RENDER MODULE — DOM描画を担当
+    ============================================================ */
+    const Render = (() => {
+
+      // XSS対策：文字列をHTMLエスケープ
+      const escape = (str) => {
+        const d = document.createElement('div');
+        d.textContent = str;
+        return d.innerHTML;
+      };
+
+      // タスク1件のHTML要素を生成
+      const createTaskEl = (task) => {
+        const li = document.createElement('li');
+        li.className = `task-item ${task.done ? 'task-done' : ''}`;
+        li.dataset.id = task.id;
+
+        const badge = task.carryOver
+          ? `<span class="carry-badge">PREV OPS</span>`
+          : '';
+
+        li.innerHTML = `
+          <button class="task-check" aria-label="${task.done ? '未完了に戻す' : 'ミッション完了'}" aria-pressed="${task.done}">
+            <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </button>
+          <span class="task-text" role="button" tabindex="0" aria-label="編集: ${escape(task.text)}">${escape(task.text)}</span>
+          ${badge}
+          <button class="task-delete" aria-label="削除: ${escape(task.text)}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        `;
+        return li;
+      };
+
+      // タスク一覧を全体再描画
+      const renderTasks = (tasks) => {
+        const carry  = tasks.filter(t =>  t.carryOver && !t.done);
+        const today  = tasks.filter(t => !t.carryOver && !t.done);
+        const done   = tasks.filter(t =>  t.done);
+
+        // 各リストにDOMを追加
+        ['carry-list', 'today-list', 'done-list'].forEach(id => {
+          document.getElementById(id).innerHTML = '';
+        });
+
+        carry.forEach(t => document.getElementById('carry-list').appendChild(createTaskEl(t)));
+        today.forEach(t => document.getElementById('today-list').appendChild(createTaskEl(t)));
+        done.forEach (t => document.getElementById('done-list').appendChild(createTaskEl(t)));
+
+        // カウンターと表示制御
+        setText('carry-count', carry.length);
+        setText('today-count', today.length);
+        setText('done-count',  done.length);
+        setText('count-active', today.length + carry.length - (carry.filter(t=>t.done).length));
+        setText('count-carry',  carry.length);
+        setText('count-done',   done.length);
+
+        document.getElementById('carry-section').style.display = carry.length ? 'block' : 'none';
+        document.getElementById('done-section').style.display  = done.length  ? 'block' : 'none';
+        document.getElementById('empty-state').style.display   = (carry.length + today.length === 0) ? 'block' : 'none';
+
+        updateProgress(tasks);
+      };
+
+      const setText = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+      };
+
+      // プログレスバーとラベルを更新
+      const updateProgress = (tasks) => {
+        const total = tasks.length;
+        const done  = tasks.filter(t => t.done).length;
+        const pct   = total === 0 ? 0 : Math.round(done / total * 100);
+
+        const bar   = document.getElementById('progress-bar');
+        const label = document.getElementById('progress-label');
+        const track = bar?.parentElement;
+
+        if (bar) {
+          bar.style.width = pct + '%';
+          track?.setAttribute('aria-valuenow', pct);
+        }
+        if (label) {
+          if (total === 0) {
+            label.textContent = 'AWAITING ORDERS';
+            label.style.color = 'var(--text-muted)';
+          } else if (pct === 100) {
+            label.textContent = 'ALL MISSIONS COMPLETE';
+            label.style.color = 'var(--emerald)';
+          } else {
+            label.textContent = `${done} / ${total} — ${pct}% COMPLETE`;
+            label.style.color = 'var(--cyan)';
+          }
+        }
+      };
+
+      // 今日の日付をHUD形式で表示
+      const renderDate = () => {
+        const el = document.getElementById('today-date');
+        if (!el) return;
+        const d = new Date();
+        // 宇宙っぽい日付フォーマット
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        el.textContent = `${y}.${m}.${day}`;
+      };
+
+      // タスクテキストをインライン編集モードに切り替える
+      const enableInlineEdit = (textEl, currentText, onSave) => {
+        if (textEl.querySelector('input')) return;
+        const input = document.createElement('input');
+        input.className = 'task-edit-input';
+        input.value = currentText;
+        input.setAttribute('aria-label', 'ミッション内容を編集');
+        textEl.textContent = '';
+        textEl.appendChild(input);
+        input.focus();
+        input.select();
+
+        const save = () => {
+          const v = input.value.trim();
+          if (v && v !== currentText) onSave(v);
+          else textEl.textContent = currentText;
+        };
+
+        input.addEventListener('keydown', e => {
+          if (e.key === 'Enter')  { e.preventDefault(); save(); }
+          if (e.key === 'Escape') { textEl.textContent = currentText; }
+        });
+        input.addEventListener('blur', save);
+      };
+
+      return { renderTasks, renderDate, enableInlineEdit };
+    })();
+
+    /* ============================================================
+       EFFECTS MODULE — ビジュアルエフェクト担当
+    ============================================================ */
+    const Effects = (() => {
+
+      // ミッション完了時のパーティクル爆発エフェクト
+      const completionBurst = (element) => {
+        const rect = element.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+
+        // 色のバリエーション
+        const colors = ['#00ff88', '#00f5ff', '#8000ff', '#ffffff', '#0055ff'];
+        const count = 12;
+
+        for (let i = 0; i < count; i++) {
+          const p = document.createElement('div');
+          p.className = 'particle';
+
+          const angle = (360 / count) * i;
+          const dist  = 40 + Math.random() * 40;
+          const tx    = Math.cos(angle * Math.PI / 180) * dist;
+          const ty    = Math.sin(angle * Math.PI / 180) * dist;
+          const size  = 3 + Math.random() * 4;
+          const color = colors[Math.floor(Math.random() * colors.length)];
+
+          p.style.cssText = `
+            left: ${cx}px;
+            top:  ${cy}px;
+            width: ${size}px;
+            height: ${size}px;
+            background: ${color};
+            box-shadow: 0 0 6px ${color};
+            --tx: ${tx}px;
+            --ty: ${ty}px;
+          `;
+
+          document.body.appendChild(p);
+          // アニメーション終了後に要素を削除（メモリリーク防止）
+          p.addEventListener('animationend', () => p.remove());
+        }
+
+        // カードのフラッシュ
+        element.classList.add('mission-complete-flash');
+        element.addEventListener('animationend', () => {
+          element.classList.remove('mission-complete-flash');
+        }, { once: true });
+      };
+
+      // 削除時の消滅エフェクト
+      const removeWithEffect = (element, callback) => {
+        element.style.transition = 'opacity .2s, transform .2s';
+        element.style.opacity    = '0';
+        element.style.transform  = 'translateX(20px)';
+        setTimeout(callback, 200);
+      };
+
+      return { completionBurst, removeWithEffect };
+    })();
+
+    /* ============================================================
+       APP MODULE — メインロジック
+    ============================================================ */
+    const App = (() => {
+
+      let state = { tasks: [] };
+
+      // UUID v4 簡易実装
+      const uid = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0;
+        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+      });
+
+      // ---- CRUD ----
+
+      const addTask = (text) => {
+        const t = text.trim();
+        if (!t) return;
+        if (t.length > 100) { showToast('100文字以内で入力してください', 'error'); return; }
+
+        state.tasks.unshift({
+          id: uid(), text: t, done: false,
+          priority: 'normal',
+          createdDate: Storage.getToday(),
+          doneDate: null, carryOver: false,
+        });
+        save();
+        Render.renderTasks(state.tasks);
+        showToast('MISSION DEPLOYED', 'success');
+      };
+
+      const toggleTask = (id) => {
+        const task = state.tasks.find(t => t.id === id);
+        if (!task) return;
+
+        const wasNotDone = !task.done;
+        state.tasks = state.tasks.map(t =>
+          t.id !== id ? t : { ...t, done: !t.done, doneDate: !t.done ? Storage.getToday() : null }
+        );
+        save();
+        Render.renderTasks(state.tasks);
+
+        // 完了時だけエフェクト発動
+        if (wasNotDone) {
+          requestAnimationFrame(() => {
+            const el = document.querySelector(`.task-item[data-id="${id}"]`);
+            if (el) Effects.completionBurst(el);
+          });
+          showToast('MISSION COMPLETE', 'success');
+        }
+      };
+
+      const updateTask = (id, newText) => {
+        const t = newText.trim();
+        if (!t || t.length > 100) return;
+        state.tasks = state.tasks.map(task =>
+          task.id === id ? { ...task, text: t } : task
+        );
+        save();
+        Render.renderTasks(state.tasks);
+      };
+
+      const deleteTask = (id) => {
+        // エフェクト後にstate更新
+        const el = document.querySelector(`.task-item[data-id="${id}"]`);
+        if (el) {
+          Effects.removeWithEffect(el, () => {
+            state.tasks = state.tasks.filter(t => t.id !== id);
+            save();
+            Render.renderTasks(state.tasks);
+            showToast('MISSION ABORTED');
+          });
+        }
+      };
+
+      // ---- 持ち越しロジック ----
+      const checkDayRollover = () => {
+        const last  = Storage.getLastVisit();
+        const today = Storage.getToday();
+        if (last && last !== today) {
+          // 完了タスクを削除、未完了をcarryOver=trueに
+          state.tasks = state.tasks
+            .filter(t => !t.done)
+            .map(t => ({ ...t, carryOver: true }));
+        }
+        Storage.updateLastVisit();
+      };
+
+      // ---- イベント ----
+      const bindEvents = () => {
+        const input  = document.getElementById('task-input');
+        const addBtn = document.getElementById('add-btn');
+
+        // Enterで追加（日本語変換中は無視）
+        input.addEventListener('keydown', e => {
+          if (e.key === 'Enter' && !e.isComposing) {
+            e.preventDefault();
+            addTask(input.value);
+            input.value = '';
+            input.focus();
+          }
+        });
+
+        addBtn.addEventListener('click', () => {
+          addTask(input.value);
+          input.value = '';
+          input.focus();
+        });
+
+        // 文字数カウント
+        input.addEventListener('input', () => {
+          const counter = document.getElementById('char-count');
+          if (!counter) return;
+          const len = input.value.length;
+          counter.textContent = len > 70 ? `${len}/100` : '';
+          counter.style.color = len > 90 ? 'var(--red)' : 'var(--text-muted)';
+        });
+
+        // タスクコンテナへのイベント委譲
+        const container = document.getElementById('task-container');
+
+        // クリック：完了トグル & 削除
+        container.addEventListener('click', e => {
+          const item = e.target.closest('.task-item');
+          if (!item) return;
+          const id = item.dataset.id;
+
+          if (e.target.closest('.task-check'))  { toggleTask(id); return; }
+          if (e.target.closest('.task-delete'))  { deleteTask(id); return; }
+        });
+
+        // ダブルクリック：編集モード
+        container.addEventListener('dblclick', e => {
+          const textEl = e.target.closest('.task-text');
+          if (!textEl) return;
+          const item = textEl.closest('.task-item');
+          if (!item) return;
+          const id   = item.dataset.id;
+          const task = state.tasks.find(t => t.id === id);
+          if (!task || task.done) return;
+          Render.enableInlineEdit(textEl, task.text, newText => updateTask(id, newText));
+        });
+
+        // キーボードで編集モード（アクセシビリティ）
+        container.addEventListener('keydown', e => {
+          if (e.key !== 'Enter' && e.key !== ' ') return;
+          const textEl = e.target.closest('.task-text');
+          if (!textEl) return;
+          e.preventDefault();
+          const item = textEl.closest('.task-item');
+          const id   = item?.dataset.id;
+          const task = state.tasks.find(t => t.id === id);
+          if (!task || task.done) return;
+          Render.enableInlineEdit(textEl, task.text, newText => updateTask(id, newText));
+        });
+
+        // 完了セクションの折りたたみ
+        document.getElementById('done-header')?.addEventListener('click', () => {
+          const section = document.getElementById('done-section');
+          const isCollapsed = section.classList.toggle('collapsed');
+          const chevron = document.querySelector('#done-header .toggle-chevron');
+          if (chevron) chevron.textContent = isCollapsed ? '▶' : '▼';
+          document.getElementById('done-header').setAttribute('aria-expanded', !isCollapsed);
+        });
+      };
+
+      // ---- ユーティリティ ----
+      const save = () => Storage.saveTasks(state.tasks);
+
+      let toastTimer = null;
+      const showToast = (msg, type = '') => {
+        const el = document.getElementById('toast');
+        if (!el) return;
+        el.textContent = msg;
+        el.className = `toast show ${type ? 'toast-' + type : ''}`;
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => { el.className = 'toast'; }, 2500);
+      };
+
+      // ---- 初期化 ----
+      const init = () => {
+        state.tasks = Storage.getTasks();
+        checkDayRollover();
+        Render.renderDate();
+        Render.renderTasks(state.tasks);
+        bindEvents();
+
+        // PCのみ自動フォーカス
+        if (window.innerWidth > 768) {
+          document.getElementById('task-input')?.focus();
+        }
+
+        console.log('[STELLAR] Mission Control Online.');
+      };
+
+      document.addEventListener('DOMContentLoaded', init);
+      return { addTask, toggleTask, deleteTask };
+    })();
+  </script>
+
+</body>
+</html>
